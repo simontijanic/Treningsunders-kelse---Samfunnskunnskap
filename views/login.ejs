@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Undersøkelse om trening</title>
+</head>
+<body>
+    <%- include('components/nav') %>
+
+    <section>
+        <div class="info">
+            <div class="infoItem">
+                <h2>Om undersøkelsen</h2>
+                <h3>Dette er en elevlagd nettside ved Bleiker VGS, som undersøker hvor ofte folk trener.</h3>
+            </div>
+            <div class="infoItem">
+                <h2>Personvern</h2>
+                <h3>Dataene du legger inn blir ikke lagret permanent. Informasjonen brukes kun til undersøkelsen.</h3>
+            </div>
+            <div class="infoItem">
+                <h2>Unik kode</h2>
+                <h3>Du får en midlertidig kode fra administrator for å kunne svare på spørsmålene.</h3>
+            </div>
+        </div>
+        
+
+        <div class="login">
+            <h1>Login for å svare på en <br> <span>Bleiker VGS undersøkelse</span></h1>
+            <form action="/login" method="POST">
+                <label for="username">Oppgi token</label>
+                <input type="text" name="token" placeholder="Token">
+                <% if (error && error.length > 0) { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+                
+                <% if (success && success.length > 0) { %>
+                    <div class="alert alert-success"><%= success %></div>
+                <% } %>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </section>
+</body>
+</html>

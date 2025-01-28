@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles.css">
+    <title>Undersøkelse om trening</title>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="adminInfo">
+            <% if (tokens) { %>
+                <h2>Disse tokens er generert:</h2>
+                <ul>
+                    <% tokens.forEach(token => { %>
+                        <li><%= token.token %> <span><%= token.used %></span></li>
+                    <% }); %>
+                </ul>
+            <% } else if (tokens === null) { %>
+                <h2>Ingen tokens er generert enda.</h2>
+            <% } %>    
+            <form action="/admin/generate-token" method="POST">
+                <button type="submit">Generer tokens</button>
+            </form>
+        </div>
+        
+    </div>
+</body>
+</html>

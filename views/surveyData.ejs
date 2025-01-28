@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <title>Undersøkelse om trening</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('components/nav') %>
+    <div class="results-cont">
+        <div class="chart-grid">
+            <div class="chart-container">
+                <h2>Treningsmønster</h2>
+                <canvas id="activityPatternChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2>Kosthold vs. Treningskorrelasjon</h2>
+                <canvas id="nutritionCorrelationChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2>Helsepoengfordeling</h2>
+                <canvas id="healthScoreChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2>Livsstilsbalanse</h2>
+                <canvas id="lifestyleChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif';
+        Chart.defaults.plugins.legend.position = 'bottom';
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+
+        const surveys = JSON.parse('<%- surveys %>');
+
+        function calculateHealthScore(survey) {
+            let score = 0;
+            
+            const workoutScore = {
+                '0': 0, '1-2': 2, '3-4': 4, '5OrMore': 5
+            }[survey.WorkoutDaysPerWeek];
+            
+            const nutritionScore = {
+                '1-2': 1, '3-4': 3, '5OrMore': 5
+            }[survey.FruitAndVegetables];
+            
+            const waterScore = {
+                'LessThan1L': 1, '1-2L': 2, '2-3L': 3, 'MoreThan3L': 4
+            }[survey.WaterIntake];
+            
+            score = (workoutScore + nutritionScore + waterScore) / 3;
+            return Math.round(score * 10) / 10;
+        }
+
+        function processEnhancedData(surveys) {
+            return surveys.map(survey => ({
+                healthScore: calculateHealthScore(survey),
+                workoutIntensity: survey.WorkoutDuration === '1-2Hours' ? 3 :
+                                 survey.WorkoutDuration === '30-60Minutes' ? 2 : 1,
+                nutritionQuality: survey.FruitAndVegetables === '5OrMore' ? 3 :
+                                 survey.FruitAndVegetables === '3-4' ? 2 : 1,
+                workoutFrequency: survey.WorkoutDaysPerWeek === '5OrMore' ? 4 :
+                                 survey.WorkoutDaysPerWeek === '3-4' ? 3 :
+                                 survey.WorkoutDaysPerWeek === '1-2' ? 2 : 1,
+                generalHealth: survey.GeneralHealth === 'Excellent' ? 4 :
+                             survey.GeneralHealth === 'Good' ? 3 :
+                             survey.GeneralHealth === 'Average' ? 2 : 1
+            }));
+        }
+
+        function renderEnhancedCharts() {
+            const processedData = processEnhancedData(surveys);
+            
+            // Activity Pattern Chart (Radar)
+            new Chart(document.getElementById('activityPatternChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['Treningsfrekvens', 'Treningsvarighet', 'Kostholdskvalitet', 'Vanninntak', 'Generell helse'],
+                    datasets: [{
+                        label: 'Gjennomsnittlig treningsprofil',
+                        data: [
+                            processedData.reduce((acc, d) => acc + d.workoutFrequency, 0) / processedData.length,
+                            processedData.reduce((acc, d) => acc + d.workoutIntensity, 0) / processedData.length,
+                            processedData.reduce((acc, d) => acc + d.nutritionQuality, 0) / processedData.length,
+                            processedData.reduce((acc, d) => acc + calculateHealthScore(surveys[0]), 0) / processedData.length,
+                            processedData.reduce((acc, d) => acc + d.generalHealth, 0) / processedData.length
+                        ],
+                        backgroundColor: 'rgba(74, 144, 226, 0.5)',
+                        borderColor: 'rgba(74, 144, 226, 1)',
+                        borderWidth: 2
+                    }]
+                }
+            });
+
+            // Nutrition vs Workout Correlation (Scatter)
+            new Chart(document.getElementById('nutritionCorrelationChart'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Kosthold vs. treningskorrelasjon',
+                        data: processedData.map(d => ({
+                            x: d.workoutFrequency,
+                            y: d.nutritionQuality
+                        })),
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Treningsfrekvens'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Kostholdskvalitet'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Health Score Distribution (Bar)
+            const healthScores = processedData.map(d => d.healthScore);
+            new Chart(document.getElementById('healthScoreChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['1-2', '2-3', '3-4', '4-5'],
+                    datasets: [{
+                        label: 'Helsepoengfordeling',
+                        data: [
+                            healthScores.filter(score => score >= 1 && score < 2).length,
+                            healthScores.filter(score => score >= 2 && score < 3).length,
+                            healthScores.filter(score => score >= 3 && score < 4).length,
+                            healthScores.filter(score => score >= 4 && score <= 5).length
+                        ],
+                        backgroundColor: 'rgba(155, 89, 182, 0.7)',
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                }
+            });
+
+            // Lifestyle Balance (Polar Area)
+            new Chart(document.getElementById('lifestyleChart'), {
+                type: 'polarArea',
+                data: {
+                    labels: ['Regelmessig trening', 'Balansert kosthold', 'Hydrering', 'Generell helse'],
+                    datasets: [{
+                        data: [
+                            processedData.reduce((acc, d) => acc + d.workoutFrequency, 0) / processedData.length,
+                            processedData.reduce((acc, d) => acc + d.nutritionQuality, 0) / processedData.length,
+                            surveys.filter(s => s.WaterIntake === '2-3L' || s.WaterIntake === 'MoreThan3L').length,
+                            processedData.reduce((acc, d) => acc + d.generalHealth, 0) / processedData.length
+                        ],
+                        backgroundColor: [
+                            'rgba(74, 144, 226, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(243, 156, 18, 0.7)',
+                            'rgba(155, 89, 182, 0.7)'
+                        ]
+                    }]
+                }
+            });
+        }
+
+        renderEnhancedCharts();
+
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('canvas').forEach(canvas => {
+                const chart = Chart.getChart(canvas);
+                if (chart) chart.resize();
+            });
+        });
+    </script>
+</body>
+</html>
