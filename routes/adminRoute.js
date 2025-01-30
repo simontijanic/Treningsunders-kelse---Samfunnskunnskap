@@ -9,4 +9,6 @@ router.get("/admin/dashboard", authenticate.isAdminAuthenticated, adminControlle
 router.post("/admin/login", adminController.loginAdmin)
 router.post("/admin/generate-token", authenticate.isAdminAuthenticated, adminController.generateToken)
 
+router.post("/admin/logout", authenticate.isAdminAuthenticated, adminController.logoutAdmin)
+
 module.exports = router

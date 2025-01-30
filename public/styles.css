@@ -1,12 +1,3 @@
-:root {
-  --color-space-cadet: #c5e6a6;
-  --color-gainsboro: #bdd2a6;
-  --color-celadon-green: #B9BEA5;
-  --color-celadon-green2: #A7AAA4;
-  --color-text: rgb(27, 25, 25);
-
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -26,7 +17,6 @@ section {
 .info {
   width: 40%;
   height: 100%;
-  background-color: var(--color-celadon-green);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -36,7 +26,6 @@ section {
 }
 
 .info .infoItem {
-  color: var(--color-text);
   width: 60%;
   display: flex;
   flex-direction: column;
@@ -54,7 +43,6 @@ section {
   font-weight: 800;
   text-decoration: none;
   font-style: italic;
-  color: var(--color-text);
   font-size: 1.5rem;
 }
 
@@ -71,10 +59,6 @@ section {
 .login h1 {
   font-weight: 800;
   font-size: 36px;
-}
-
-.login h1 span {
-    color: var(--color-text);
 }
 
 .login form {
@@ -102,15 +86,11 @@ section {
   border-radius: 4px;
   padding: 0 12px;
   margin-bottom: 12px;
-  background-color: var(--color-space-cadet);
-  color: var(--color-text);
   cursor: pointer;
 }
 
 .header {
   width: 100%;
-  background-color: var(--color-celadon-green);
-  color: var(--color-text);
 
   display: flex;
   align-items: center;
@@ -143,16 +123,12 @@ section {
   border-radius: 4px;
   padding: 0 12px;
   margin-bottom: 12px;
-  background-color: var(--color-space-cadet);
-  color: var(--color-text);
   cursor: pointer;
 }
 
 .adminInfo {
   width: 40%;
   height: 100%;
-  background-color: var(--color-celadon-green);
-  color: var(--color-text);
 
   display: flex;
   align-items: center;
@@ -160,36 +136,32 @@ section {
   flex-direction: column;
 
   padding: 46px;
+
 }
 
 .adminInfo ul {
-  width: 80%;
+  width: 100%;
   height: 70%;
 
-  display: grid;
+  display: grid flex;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(6, 1fr);
   justify-items: center;
   align-items: center;
   gap: 24px;
+  text-decoration: none;
+  list-style: none;
+}
+
+.adminExtra {
+  width: 60%;
+  height: 100%;
 }
 
 .alert {
   padding: 10px;
   margin: 10px 0;
   border-radius: 5px;
-}
-
-.alert-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.alert-success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
 }
 
 .data-container {
@@ -209,15 +181,12 @@ nav {
   align-items: center;
   justify-content: space-around;
   padding: 24px;
-  background-color: var(--color-celadon-green);
 
-  color: var(--color-text);
   font-weight: 200;
 }
 
 nav a {
   font-weight: 800;
-  color: var(--color-text);
   text-decoration: none;
 }
 
@@ -227,7 +196,6 @@ nav a {
 }
 
 .dashboard-header h1 {
-  color: var(--color-text);
   font-size: 2rem;
   margin-bottom: 0.5rem;
 }
@@ -255,7 +223,6 @@ nav a {
 }
 
 .chart-container h2 {
-  color: var(--text-color);
   margin-bottom: 1rem;
   font-size: 1.25rem;
 }
@@ -263,6 +230,15 @@ nav a {
 canvas {
   width: 100% !important;
   height: 300px !important;
+}
+
+a {
+  text-decoration: none;
+  color: black;
+}
+
+.token-used {
+  font-weight: 200;
 }
 
 @media (max-width: 768px) {
@@ -275,6 +251,10 @@ canvas {
   }
   nav h1 {
     display: none;
+  }
+
+  .adminInfo {
+    width: 100%;
   }
 
   section {
@@ -320,4 +300,9 @@ canvas {
 
 .results-cont {
   padding: 50px;
+}
+
+.mainFont {
+  font-family: "Montserrat", serif;
+  font-optical-sizing: auto;
 }
