@@ -59,6 +59,7 @@ section {
 .login h1 {
   font-weight: 800;
   font-size: 36px;
+  line-height: 1.5;
 }
 
 .login form {
@@ -309,7 +310,7 @@ a {
 
 #logo {
   background-color: rgb(57, 79, 179);
-  padding: 5px;
+  padding: 3px;
   color: white;
   width: fit-content;
 }
