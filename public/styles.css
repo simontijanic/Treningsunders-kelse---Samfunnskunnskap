@@ -306,3 +306,9 @@ a {
   font-family: "Montserrat", serif;
   font-optical-sizing: auto;
 }
+
+#logo {
+  background-color: rgb(57, 79, 179);
+  padding: 5px;
+  color: white;
+}

@@ -4,15 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <title>Undersøkelse om trening</title>
-    <link rel="stylesheet" href="/styles.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Parkinsans:wght@300..800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Quicksand:wght@300..700&family=Racing+Sans+One&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sora:wght@100..800&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+    <title>Undersøkelse om trening</title>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="mainFont">
-    
     <%- include('components/nav') %>
     <div class="results-cont">
         <div class="chart-grid">
@@ -39,156 +39,269 @@
     </div>
 
     <script>
-        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif';
-        Chart.defaults.plugins.legend.position = 'bottom';
-        Chart.defaults.responsive = true;
-        Chart.defaults.maintainAspectRatio = false;
+        // Constants for scoring and categorization
+const HEALTH_CATEGORIES = {
+    EXCELLENT: { min: 4.5, label: 'Utmerket' },
+    GOOD: { min: 3.5, label: 'God' },
+    MODERATE: { min: 2.5, label: 'Moderat' },
+    FAIR: { min: 1.5, label: 'Tilstrekkelig' },
+    POOR: { min: 0, label: 'Trenger forbedring' }
+};
 
-        const surveys = JSON.parse('<%- surveys %>');
+const WORKOUT_INTENSITY_MAPPING = {
+    'MoreThan2Hours': 4,
+    '1-2Hours': 3,
+    '30-60Minutes': 2,
+    'LessThan30Minutes': 1
+};
 
-        function calculateHealthScore(survey) {
-            let score = 0;
-            
-            const workoutScore = {
-                '0': 0, '1-2': 2, '3-4': 4, '5OrMore': 5
-            }[survey.WorkoutDaysPerWeek];
-            
-            const nutritionScore = {
-                '1-2': 1, '3-4': 3, '5OrMore': 5
-            }[survey.FruitAndVegetables];
-            
-            const waterScore = {
-                'LessThan1L': 1, '1-2L': 2, '2-3L': 3, 'MoreThan3L': 4
-            }[survey.WaterIntake];
-            
-            score = (workoutScore + nutritionScore + waterScore) / 3;
-            return Math.round(score * 10) / 10;
+Chart.defaults.plugins.legend.position = 'bottom';
+Chart.defaults.responsive = true;
+Chart.defaults.maintainAspectRatio = false;
+
+function calculateDetailedHealthScore(survey) {
+    // Workout component (30% of total score)
+    const workoutScore = {
+        frequency: {
+            '0': 0, '1-2': 2, '3-4': 3.5, '5OrMore': 5
+        }[survey.WorkoutDaysPerWeek] * 0.15,
+        
+        duration: WORKOUT_INTENSITY_MAPPING[survey.WorkoutDuration] * 0.15
+    };
+
+    // Nutrition component (40% of total score)
+    const nutritionScore = {
+        meals: {
+            '1': 1, '2': 2, '3': 4, '4': 5, '5OrMore': 4
+        }[survey.MealsPerDay] * 0.1,
+        
+        fruitVeg: {
+            '0': 0, '1-2': 2, '3-4': 4, '5OrMore': 5
+        }[survey.FruitAndVegetables] * 0.15,
+        
+        unhealthyFood: {
+            'RarelyOrNever': 5, '1-2TimesPerWeek': 4,
+            '3-4TimesPerWeek': 2, 'AlmostDaily': 1
+        }[survey.UnhealthyFoodFrequency] * 0.15
+    };
+
+    // Hydration component (15% of total score)
+    const hydrationScore = {
+        'LessThan1L': 1, '1-2L': 2.5,
+        '2-3L': 4, 'MoreThan3L': 5
+    }[survey.WaterIntake] * 0.15;
+
+    // Supplement usage component (15% of total score)
+    const supplementScore = survey.UsesSupplements ? 
+        calculateSupplementScore(survey.SupplementTypes, survey.SupplementFrequency) * 0.15 : 2.5 * 0.15;
+
+    const totalScore = workoutScore.frequency + workoutScore.duration +
+                      nutritionScore.meals + nutritionScore.fruitVeg +
+                      nutritionScore.unhealthyFood + hydrationScore +
+                      supplementScore;
+
+    return {
+        total: Math.round(totalScore * 10) / 10,
+        components: {
+            workout: (workoutScore.frequency + workoutScore.duration) * 2,
+            nutrition: (nutritionScore.meals + nutritionScore.fruitVeg + nutritionScore.unhealthyFood) * 5/3,
+            hydration: hydrationScore * 20/3,
+            supplements: supplementScore * 20/3
         }
+    };
+}
 
-        function processEnhancedData(surveys) {
-            return surveys.map(survey => ({
-                healthScore: calculateHealthScore(survey),
-                workoutIntensity: survey.WorkoutDuration === '1-2Hours' ? 3 :
-                                 survey.WorkoutDuration === '30-60Minutes' ? 2 : 1,
-                nutritionQuality: survey.FruitAndVegetables === '5OrMore' ? 3 :
-                                 survey.FruitAndVegetables === '3-4' ? 2 : 1,
-                workoutFrequency: survey.WorkoutDaysPerWeek === '5OrMore' ? 4 :
-                                 survey.WorkoutDaysPerWeek === '3-4' ? 3 :
-                                 survey.WorkoutDaysPerWeek === '1-2' ? 2 : 1,
-                generalHealth: survey.GeneralHealth === 'Excellent' ? 4 :
-                             survey.GeneralHealth === 'Good' ? 3 :
-                             survey.GeneralHealth === 'Average' ? 2 : 1
-            }));
-        }
+function calculateSupplementScore(types, frequency) {
+    if (!types) return 2.5;
+    
+    const frequencyScore = {
+        'Daily': 5, '3-5TimesPerWeek': 4,
+        '1-2TimesPerWeek': 3, 'Rarely': 2
+    }[frequency];
 
-        function renderEnhancedCharts() {
-            const processedData = processEnhancedData(surveys);
-            
-            // Activity Pattern Chart (Radar)
-            new Chart(document.getElementById('activityPatternChart'), {
-                type: 'radar',
-                data: {
-                    labels: ['Treningsfrekvens', 'Treningsvarighet', 'Kostholdskvalitet', 'Vanninntak', 'Generell helse'],
-                    datasets: [{
-                        label: 'Gjennomsnittlig treningsprofil',
-                        data: [
-                            processedData.reduce((acc, d) => acc + d.workoutFrequency, 0) / processedData.length,
-                            processedData.reduce((acc, d) => acc + d.workoutIntensity, 0) / processedData.length,
-                            processedData.reduce((acc, d) => acc + d.nutritionQuality, 0) / processedData.length,
-                            processedData.reduce((acc, d) => acc + calculateHealthScore(surveys[0]), 0) / processedData.length,
-                            processedData.reduce((acc, d) => acc + d.generalHealth, 0) / processedData.length
-                        ],
-                        backgroundColor: 'rgba(74, 144, 226, 0.5)',
-                        borderColor: 'rgba(74, 144, 226, 1)',
-                        borderWidth: 2
-                    }]
-                }
-            });
+    const typeScore = types.length <= 3 ? 5 : 
+                     types.length <= 5 ? 4 : 3;
 
-            // Nutrition vs Workout Correlation (Scatter)
-            new Chart(document.getElementById('nutritionCorrelationChart'), {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Kosthold vs. treningskorrelasjon',
-                        data: processedData.map(d => ({
-                            x: d.workoutFrequency,
-                            y: d.nutritionQuality
-                        })),
-                        backgroundColor: 'rgba(46, 204, 113, 0.7)'
-                    }]
-                },
-                options: {
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Treningsfrekvens'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Kostholdskvalitet'
-                            }
-                        }
+    return (frequencyScore + typeScore) / 2;
+}
+
+function renderEnhancedCharts(surveys) {
+    const processedData = surveys.map(survey => ({
+        healthMetrics: calculateDetailedHealthScore(survey),
+        workoutTypes: survey.WorkoutTypes || [],
+        generalHealth: survey.GeneralHealth,
+        age: parseInt(survey.Age),
+        gender: survey.Gender
+    }));
+
+    // Comprehensive Health Matrix (Radar)
+    new Chart(document.getElementById('activityPatternChart'), {
+        type: 'radar',
+        data: {
+            labels: ['Treningsintensitet', 'Kostholdsbalanse', 
+                    'Hydrering', 'Kosttilskudd', 'Generell helse'],
+            datasets: [{
+                label: 'Gjennomsnittlig helseprofil',
+                data: [
+                    average(processedData.map(d => d.healthMetrics.components.workout)),
+                    average(processedData.map(d => d.healthMetrics.components.nutrition)),
+                    average(processedData.map(d => d.healthMetrics.components.hydration)),
+                    average(processedData.map(d => d.healthMetrics.components.supplements)),
+                    average(processedData.map(d => 
+                        d.generalHealth === 'Excellent' ? 5 :
+                        d.generalHealth === 'Good' ? 4 :
+                        d.generalHealth === 'Average' ? 3 :
+                        d.generalHealth === 'Poor' ? 2 : 1
+                    ))
+                ],
+                backgroundColor: 'rgba(74, 144, 226, 0.5)',
+                borderColor: 'rgba(74, 144, 226, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            scales: {
+                r: {
+                    min: 0,
+                    max: 5,
+                    ticks: {
+                        stepSize: 1
                     }
                 }
-            });
-
-            // Health Score Distribution (Bar)
-            const healthScores = processedData.map(d => d.healthScore);
-            new Chart(document.getElementById('healthScoreChart'), {
-                type: 'bar',
-                data: {
-                    labels: ['1-2', '2-3', '3-4', '4-5'],
-                    datasets: [{
-                        label: 'Helsepoengfordeling',
-                        data: [
-                            healthScores.filter(score => score >= 1 && score < 2).length,
-                            healthScores.filter(score => score >= 2 && score < 3).length,
-                            healthScores.filter(score => score >= 3 && score < 4).length,
-                            healthScores.filter(score => score >= 4 && score <= 5).length
-                        ],
-                        backgroundColor: 'rgba(155, 89, 182, 0.7)',
-                        borderColor: 'rgba(155, 89, 182, 1)',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                }
-            });
-
-            // Lifestyle Balance (Polar Area)
-            new Chart(document.getElementById('lifestyleChart'), {
-                type: 'polarArea',
-                data: {
-                    labels: ['Regelmessig trening', 'Balansert kosthold', 'Hydrering', 'Generell helse'],
-                    datasets: [{
-                        data: [
-                            processedData.reduce((acc, d) => acc + d.workoutFrequency, 0) / processedData.length,
-                            processedData.reduce((acc, d) => acc + d.nutritionQuality, 0) / processedData.length,
-                            surveys.filter(s => s.WaterIntake === '2-3L' || s.WaterIntake === 'MoreThan3L').length,
-                            processedData.reduce((acc, d) => acc + d.generalHealth, 0) / processedData.length
-                        ],
-                        backgroundColor: [
-                            'rgba(74, 144, 226, 0.7)',
-                            'rgba(46, 204, 113, 0.7)',
-                            'rgba(243, 156, 18, 0.7)',
-                            'rgba(155, 89, 182, 0.7)'
-                        ]
-                    }]
-                }
-            });
+            }
         }
+    });
 
-        renderEnhancedCharts();
+    // Age vs Health Score Distribution (Scatter)
+    new Chart(document.getElementById('nutritionCorrelationChart'), {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Alder vs. helsepoeng',
+                data: processedData.map(d => ({
+                    x: d.age,
+                    y: d.healthMetrics.total
+                })),
+                backgroundColor: 'rgba(46, 204, 113, 0.7)'
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Alder'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Helsepoeng'
+                    },
+                    min: 0,
+                    max: 5
+                }
+            }
+        }
+    });
 
-        window.addEventListener('resize', () => {
-            document.querySelectorAll('canvas').forEach(canvas => {
-                const chart = Chart.getChart(canvas);
-                if (chart) chart.resize();
-            });
+    // Health Score Distribution by Gender (Bar)
+    const genderData = {
+        Male: processedData.filter(d => d.gender === 'Male').map(d => d.healthMetrics.total),
+        Female: processedData.filter(d => d.gender === 'Female').map(d => d.healthMetrics.total)
+    };
+
+    new Chart(document.getElementById('healthScoreChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(HEALTH_CATEGORIES),
+            datasets: [{
+                label: 'Menn',
+                data: Object.values(HEALTH_CATEGORIES).map(cat => 
+                    genderData.Male.filter(score => 
+                        score >= cat.min && (cat.max ? score < cat.max : true)
+                    ).length
+                ),
+                backgroundColor: 'rgba(74, 144, 226, 0.7)',
+                borderColor: 'rgba(74, 144, 226, 1)',
+                borderWidth: 2
+            }, {
+                label: 'Kvinner',
+                data: Object.values(HEALTH_CATEGORIES).map(cat => 
+                    genderData.Female.filter(score => 
+                        score >= cat.min && (cat.max ? score < cat.max : true)
+                    ).length
+                ),
+                backgroundColor: 'rgba(245, 176, 65, 0.7)',
+                borderColor: 'rgba(245, 176, 65, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Antall personer'
+                    }
+                }
+            }
+        }
+    });
+
+    // Workout Type Distribution (Polar)
+    const workoutTypeData = {};
+    processedData.forEach(d => {
+        d.workoutTypes.forEach(type => {
+            workoutTypeData[type] = (workoutTypeData[type] || 0) + 1;
         });
+    });
+
+    new Chart(document.getElementById('lifestyleChart'), {
+        type: 'polarArea',
+        data: {
+            labels: Object.keys(workoutTypeData).map(type => {
+                const translations = {
+                    'StrengthTraining': 'Styrketrening',
+                    'Cardio': 'Kardio',
+                    'GroupTraining': 'Gruppetrening',
+                    'TeamSports': 'Lagidrett',
+                    'OtherTraining': 'Annen trening'
+                };
+                return translations[type] || type;
+            }),
+            datasets: [{
+                data: Object.values(workoutTypeData),
+                backgroundColor: [
+                    'rgba(74, 144, 226, 0.7)',
+                    'rgba(46, 204, 113, 0.7)',
+                    'rgba(243, 156, 18, 0.7)',
+                    'rgba(155, 89, 182, 0.7)',
+                    'rgba(231, 76, 60, 0.7)'
+                ]
+            }]
+        }
+    });
+}
+
+function average(arr) {
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+// Initial render
+renderEnhancedCharts(JSON.parse('<%- surveys %>'));
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    document.querySelectorAll('canvas').forEach(canvas => {
+        const chart = Chart.getChart(canvas);
+        if (chart) chart.resize();
+    });
+});
+
     </script>
+
+ 
 </body>
 </html>
