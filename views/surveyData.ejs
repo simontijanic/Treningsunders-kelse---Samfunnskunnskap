@@ -26,11 +26,15 @@
                 <canvas id="nutritionCorrelationChart"></canvas>
             </div>
 
-            <div class="chart-container">
-                <h2>Helsepoengfordeling</h2>
-                <canvas id="healthScoreChart"></canvas>
+            <div class="chart-container samletData">
+                <h2>Informasjon om samlet data</h2>
+                <p>Dette prosjektet er utviklet av en elev ved Bleiker videregående skole som en del av et tverrfaglig prosjekt i IT og samfunnskunnskap. 
+                <br> <br>
+                Undersøkelsen er en kvantitativ studie, der data samles inn anonymt og brukes kun til statistiske formål. Helsepoengene beregnes basert på svarene dine, og resultatene gir en generell oversikt over trender i helsevaner. Husk at individuelle variasjoner alltid spiller en rolle, og denne fordelingen er kun en indikasjon.</p>
+                    <br> <br>
+                    <h1 id="logo">Bleiker Videregående Skole</h1>
             </div>
-
+            
             <div class="chart-container">
                 <h2>Livsstilsbalanse</h2>
                 <canvas id="lifestyleChart"></canvas>
@@ -210,45 +214,6 @@ function renderEnhancedCharts(surveys) {
         Male: processedData.filter(d => d.gender === 'Male').map(d => d.healthMetrics.total),
         Female: processedData.filter(d => d.gender === 'Female').map(d => d.healthMetrics.total)
     };
-
-    new Chart(document.getElementById('healthScoreChart'), {
-        type: 'bar',
-        data: {
-            labels: Object.keys(HEALTH_CATEGORIES),
-            datasets: [{
-                label: 'Menn',
-                data: Object.values(HEALTH_CATEGORIES).map(cat => 
-                    genderData.Male.filter(score => 
-                        score >= cat.min && (cat.max ? score < cat.max : true)
-                    ).length
-                ),
-                backgroundColor: 'rgba(74, 144, 226, 0.7)',
-                borderColor: 'rgba(74, 144, 226, 1)',
-                borderWidth: 2
-            }, {
-                label: 'Kvinner',
-                data: Object.values(HEALTH_CATEGORIES).map(cat => 
-                    genderData.Female.filter(score => 
-                        score >= cat.min && (cat.max ? score < cat.max : true)
-                    ).length
-                ),
-                backgroundColor: 'rgba(245, 176, 65, 0.7)',
-                borderColor: 'rgba(245, 176, 65, 1)',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Antall personer'
-                    }
-                }
-            }
-        }
-    });
 
     // Workout Type Distribution (Polar)
     const workoutTypeData = {};

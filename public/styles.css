@@ -311,4 +311,9 @@ a {
   background-color: rgb(57, 79, 179);
   padding: 5px;
   color: white;
+  width: fit-content;
+}
+
+.samletData p {
+  line-height: 25px;
 }
